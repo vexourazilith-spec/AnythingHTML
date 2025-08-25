@@ -1,198 +1,983 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>
-        BatterySaver
-    </title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="
-    sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The July 2024 Bangladesh Movement: An Interactive Timeline</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        .rating {
-            display: inline-block;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
         }
-        
-        .pages {
-            display: inline-block;
+        .story-content {
+            min-height: 400px; /* Ensure content area has a minimum height */
+            transition: all 0.5s ease-in-out;
         }
-        
-        .pagesno {
-            display: inline-block;
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s forwards;
         }
-        
-        .btn {
-            width: 180px;
-            height: 40px;
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
-        
-        .btn-outline-secondary {
-            color: rgb(31, 60, 180);
+        .blackout-effect {
+            background-color: #000;
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            z-index: 1000;
+            transition: opacity 1s ease-in-out;
+            opacity: 1;
         }
-        
-        .book_description {
-            margin-right: 400px;
+        .blackout-effect.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
-        
-        .book_img {
-            display: inline-block;
-            margin-left: 500px;
+        .blackout-message {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
-        
-        .about_book {
-            display: inline-block;
+        .modal {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out;
         }
-        
-        .star-img:hover {
-            background-color: #339933;
+        .modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #2d3748; /* Darker gray for modal */
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 900px; /* Increased max-width for table */
+            width: 90%;
+            max-height: 90vh; /* Increased max-height */
+            overflow-y: auto;
+            position: relative;
+        }
+        .close-modal-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
             border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #e2e8f0;
         }
-        
-        .footer-text {
-            text-decoration: none;
+        /* Custom styles for the interactive map */
+        #map-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Adjust as needed */
+            margin: 1.5rem auto;
+            background-color: #374151; /* Dark background for map */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            padding: 1rem;
+        }
+        #interactive-map {
+            width: 100%;
+            height: 400px; /* Fixed height for the map graphic */
+            background-image: url('https://placehold.co/800x400/374151/FFFFFF?text=Map+of+Bangladesh'); /* Placeholder map image */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            border-radius: 0.5rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .map-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ef4444; /* Red dot */
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fee2e2;
+            transition: transform 0.2s ease-in-out;
+        }
+        .map-point:hover {
+            transform: scale(1.2);
+        }
+        .map-point-label {
+            position: absolute;
+            background-color: #1f2937;
+            color: #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            white-space: nowrap;
+            font-size: 0.875rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            pointer-events: none;
+            transform: translateY(-100%); /* Position above the dot */
+            left: 50%;
+            transform: translateX(-50%) translateY(-120%);
+        }
+        .map-point:hover .map-point-label {
+            opacity: 1;
+            visibility: visible;
+        }
+        #map-info-display {
+            background-color: #1f2937;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            text-align: left;
+            min-height: 80px;
+        }
+
+        /* Table specific styles for the modal */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #4a5568; /* Darker border for table */
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .data-table th {
+            background-color: #4a5568;
+            font-weight: bold;
+            color: #e2e8f0;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #2d3748; /* Alternate row color */
+        }
+        .data-table tr:hover {
+            background-color: #4a5568; /* Hover effect */
+        }
+
+        /* Enhanced Martyr Tribute Overlay */
+        .martyr-tribute-effect {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(139, 0, 0, 0.8); /* Darker, more somber red */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            color: #fff;
+            font-size: 2.5rem;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1.5s ease-in-out, visibility 1.5s ease-in-out;
+        }
+        .martyr-tribute-effect.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .martyr-tribute-text {
+            animation: textFadeInUp 2s ease-out forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+            transform: translateY(20px);
+            text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.7); /* Subtle glow */
+        }
+        @keyframes textFadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+<body class="min-h-screen flex flex-col justify-between items-center py-8">
 
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navitem">
-            <div class="container-fluid">
-                <img src="img/google-play.png" alt="..." height="50px" width="50px" class="ms-3">
-                <a class="navbar-brand fs-3 fw-normal" href="#">Google Play</a>
+    <div id="app" class="bg-gray-800 rounded-lg shadow-xl p-8 max-w-4xl w-full mx-4 sm:mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-6 text-red-400">The July 2024 Bangladesh Movement: An Interactive Timeline</h1>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                       
-                    </ul>
-                    <form class="d-flex">
-                        <!-- <input class="form-control mx-5" placeholder="Search" size="60px">-->
-                        <input class="form-control me-5" type="search" placeholder="Search" aria-label="Search" size="60px">
+        <!-- Story Progress Bar -->
+        <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-2 mb-4">
+            <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-500 ease-out" style="width: 0%;"></div>
+        </div>
 
-                        <img src="img/search-interface-symbol.png" class="img-fluid me-3" alt="..." height="10px" width="15px">
+        <div id="date-display" class="text-lg font-semibold text-gray-400 text-center mb-4"></div>
 
-                        <img src="img/question.png" class="img-fluid me-3" alt="..." height="20px" width="20px">
+        <div id="story-image-container" class="relative w-full h-64 bg-gray-700 rounded-lg overflow-hidden mb-6 flex items-center justify-center">
+            <img id="story-image" src="" alt="Story Image" class="absolute w-full h-full object-cover opacity-0 transition-opacity duration-500">
+            <p id="image-placeholder" class="text-gray-500 italic">No image available for this event.</p>
+        </div>
 
-                        <a href="signin.html"> <img src="img/user.png" class="img-fluid me-3" alt="..." height="33px" width="33px"></a>
-                    </form>
+        <div id="narrative-text" class="story-content text-gray-200 text-lg leading-relaxed mb-8 text-center sm:text-left">
+            <p class="fade-in">Loading story...</p>
+        </div>
+
+        <div id="choices-container" class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <!-- Buttons will be injected here -->
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mt-8 space-y-4 sm:space-y-0">
+            <button id="back-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
+                ← Back
+            </button>
+            <div class="flex items-center space-x-2">
+                <span class="text-gray-400 text-sm">Volume:</span>
+                <input type="range" id="volume-control" min="0" max="1" value="0.5" step="0.05" class="w-24 h-2 rounded-lg appearance-none cursor-pointer bg-gray-700 accent-blue-500">
+            </div>
+            <button id="next-day-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                Next Day →
+            </button>
+        </div>
+
+        <!-- Special interactive map container -->
+        <div id="map-interaction-container" class="hidden">
+            <h3 class="text-xl font-bold text-red-300 text-center my-4">Click on the points below to see details of violence across Bangladesh:</h3>
+            <div id="map-container">
+                <div id="interactive-map">
+                    <!-- Map points will be injected here by JS -->
+                </div>
+                <div id="map-info-display" class="text-sm">
+                    <p class="text-gray-400">Select a point on the map to learn more about events in that region.</p>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <div class="about_book">
-            <h2 class="mt-4" style="font-size: 60px;"> <b>BatterySaver </b></h2>
-            <div class="mt-4 text-success fs-6 fw-bolder">Battery Saver</div>
-            <span>contains ads-In-app purchases</span>
-
-
-            <div class="mt-3">
-                <div class="rating ">
-                    <span class="ms-4">4.2★</br>14.9Cr reviews</span>
-                </div>
-                <div class="pages ms-5">
-                    <p class="ms-2">500Cr+</p>
-                    <p>Downloads</p>
-                </div>
-                <div class="pagesno ms-5">
-                    <P class="ms-4">12+</P>
-                    <p>Rated for 12+</p>
-                </div>
-            </div>
-            <div class="mt-4">
-                <button type="button" class="btn btn-success fs-3 pb-5 rounded-4" onclick="downloadFile()">Install</button>
-
-                <script>
-                 function downloadFile() {
-                                          window.location.href = 'BatterySaver.apk';
-                                         }
-                </script>
-
-                <img src="img/share.png" height="40px" width="40px" class="ms-1" />
-                <p class="d-inline-block text-success">Share</p>
-            </div>
         </div>
-        <div class="book_img rounded-5" style="border: none;">
-            <img class="shadow-lg card rounded-5" style="border: none;" src="favicon.ico" width="192" height="192"/>
-        </div>
-        <p class="mt-3">This app is available for all of your devices</p>
-        <div class="mt-4">
-            <div class="d-inline-block">
-                <h4 class="mt-4">Data Safety</h4>
-            </div>
-            <div class="d-inline-block">
-                <img src="img/right-arrow.png" height="20px" width="20px" class="d-inline-block ms-1 " />
-            </div>
-        </div>
-        <p>Safety starts with understanding how developers collect and share your data. Data privacy and security practices may <br>vary based on your use, region and age The developer provided this information and may update it over time.</p>
 
-        <h4>Rate this app</h4>
-        <p>Tell others what you think.</p>
-        <div>
-            <img src="img/star (1).png" height="40px" width="40px" class="star-img" />
-            <img src="img/star (1).png" height="40px" width="40px" class="d-inline-block" />
-            <img src="img/star (1).png" height="40px" width="40px" class="d-inline-block" />
-            <img src="img/star (1).png" height="40px" width="40px" class="d-inline-block" />
-            <img src="img/star (1).png" height="40px" width="40px" class="d-inline-block" />
-
-            <div class="d-inline-block">
-                <button type="button" class="btn btn-success rounded-3" style="margin-left: 350px;">Write Review</button>
-            </div>
-        </div>
-    </div>
-    <div class="mt-4">
-        <div class="d-inline-block">
-            <h4 style="margin-left: 120px;" class="mt-4">Ratings and reviews</h4>
-        </div>
-        <div class="d-inline-block">
-            <img src="img/right-arrow.png" height="20px" width="20px" class="d-inline-block ms-3 " />
-        </div>
-    </div>
-    <p class="Semibold weight text " style="font-size: 60px;margin-left: 120px;">4.2</p>
-    <img src="img/rating.png" height="80px" width="80px" class="mt-1" style="margin-left: 120px;" />
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
-    <hr class="mx-5 ">
-
-    <!-- Footer-->
-    <div class="footer-bt" style="background-color:#f5f5f0;height: 300px; ">
-        <div class="column links mt-5 " style="margin-left: 100px; ">
-            <h5>Google Play
-                <div style="display: inline-block ">
-                    <h5 style="display: inline-block;margin-left: 170px; " class="mt-4 ">Children and Family</h5>
-                </div>
-            </h5>
-
-            <ul class="ul ">
-                <li>
-                    <a href="https://play.google/play-pass/ " class="footer-text fs-6 ">Play Pass</a>
-                    <a style="margin-left: 195px; " class="footer-text fs-6 " href="https://support.google.com/googleplay/answer/6209547?visit_id=638283697144895506-1308339187&p=pff_parentguide&rd=1 ">Parent Guide</a>
-                </li>
-                <li>
-                    <a href="https://play.google.com/store/points/enroll " class="footer-text fs-6 ">Play Points</a>
-                    <a style="margin-left: 180px; " class="footer-text fs-6 " href="https://support.google.com/googleplay/answer/7007852 ">Family Sharing</a>
-                </li>
-                <li>
-                    <a href="https://play.google.com/about/giftcards/ " class="footer-text fs-6 ">Gift Cards</a>
-                </li>
-                <li>
-                    <a href="https://play.google.com/store/games?device=windows&code " class="footer-text fs-6 ">Redeem</a>
-                </li>
-
-                <li>
-                    <a href="https://support.google.com/googleplay/answer/2479637?visit_id=638283675158104040-3504840057&rd=1 " class="footer-text fs-6 ">Refund Policy</a>
-                </li>
+        <!-- Learn More section, visible at the end -->
+        <div id="learn-more-section" class="hidden bg-gray-700 p-6 rounded-lg mt-8">
+            <h2 class="text-2xl font-bold text-blue-300 mb-4">Further Reading & Resources</h2>
+            <p class="text-gray-200 mb-4">The July Movement in Bangladesh was a complex and deeply impactful series of events. To learn more, we recommend exploring these credible sources:</p>
+            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                <li><a href="https://en.wikipedia.org/wiki/July_Revolution_(Bangladesh)" target="_blank" class="text-blue-400 hover:underline">Wikipedia: July Revolution (Bangladesh)</a></li>
+                <li><a href="https://www.amnesty.org/en/latest/news/2024/07/what-is-happening-at-the-quota-reform-protests-in-bangladesh/" target="_blank" class="text-blue-400 hover:underline">Amnesty International Report on Bangladesh Protests</a></li>
+                <li><a href="https://www.hrw.org/news/2024/07/20/bangladesh-unlawful-killings-mass-arrests" target="_blank" class="text-blue-400 hover:underline">Human Rights Watch Report</a></li>
+                <li><a href="https://www.aljazeera.com/news/longform/2024/8/7/how-bangladeshs-gen-z-protests-brought-down-pm-sheikh-hasina" target="_blank" class="text-blue-400 hover:underline">Al Jazeera: How Bangladesh's 'Gen Z' protests brought down PM Sheikh Hasina</a></li>
+                <li><a href="https://www.thedailystar.net/news/bangladesh/news/timeline-student-protests-3668996" target="_blank" class="text-blue-400 hover:underline">The Daily Star: Timeline of student protests</a></li>
             </ul>
-
-
+            <p class="text-gray-400 mt-4 italic">Please note: The images and audio used in this interactive story are placeholders and do not represent actual footage or sounds from the events. They are included for illustrative purposes only to enhance the narrative.</p>
         </div>
 
     </div>
 
-</body>
+    <!-- Modal for special events like witness accounts, death toll data, etc. -->
+    <div id="modal-overlay" class="modal">
+        <div id="modal-content" class="modal-content">
+            <button id="close-modal" class="close-modal-btn">&times;</button>
+            <h3 id="modal-title" class="text-xl font-bold text-blue-300 mb-4"></h3>
+            <div id="modal-text" class="text-gray-200 mb-4"></div>
+            <div id="modal-choices" class="flex justify-center mt-4 space-x-4"></div>
+        </div>
+    </div>
 
+    <!-- Blackout effect for internet shutdown simulation -->
+    <div id="blackout-overlay" class="blackout-effect hidden">
+        <p class="blackout-message">INTERNET SHUTDOWN</p>
+        <p class="text-gray-400">Communication cut. Uncertainty reigns.</p>
+        <button id="end-blackout" class="mt-8 bg-white text-gray-800 font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity50">
+            End Simulation
+        </button>
+    </div>
+
+    <!-- Martyr tribute overlay - Enhanced for "more unique" -->
+    <div id="martyr-tribute-overlay" class="martyr-tribute-effect">
+        <p class="martyr-tribute-text text-4xl mb-4">In Solemn Remembrance</p>
+        <p class="martyr-tribute-text text-2xl">To all the Shohid, our deepest respects.</p>
+    </div>
+
+    <script>
+        // Data for the story scenes
+        const storyData = {
+            "prologue": {
+                date: "June 5, 2024",
+                title: "The Quota Reinstatement",
+                text: `The stage was set on June 5, 2024, when the Bangladesh High Court reinstated a 30% quota for descendants of freedom fighters in government jobs, reversing a 2018 decision. This sparked discontent among students who believed it undermined merit-based opportunities.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+High+Court+Decision+or+Quota+Document",
+                audio: "" // Placeholder for background audio
+            },
+            "july_1": {
+                date: "July 1, 2024",
+                title: "Protests Begin to Resume",
+                text: `Students from Dhaka University, Jahangirnagar University, and others launch widespread protests, reigniting the "Anti-discrimination Student Movement." They demand the abolition of quotas in government jobs. A three-day program of protests is announced.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Students+Gathering+Peacefully",
+                audio: "" // Placeholder for audio, e.g., "sounds/peaceful_protest.mp3"
+            },
+            "july_7": {
+                date: "July 7, 2024",
+                title: "The 'Bangla Blockade'",
+                text: `The "Bangla Blockade" program paralyzes Dhaka and other major cities. Massive protests and road blockades bring traffic to a standstill. Students vow to continue their agitation.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Road+Blockade+or+Traffic+Jam",
+                audio: "" // Placeholder for audio, e.g., "sounds/traffic_horns.mp3"
+            },
+            "july_10": {
+                date: "July 10, 2024",
+                title: "Supreme Court Intervention",
+                text: `The Supreme Court's Appellate Division issues a four-week status quo on the High Court's order, attempting to temporarily calm the situation. However, student discontent continues to simmer.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Supreme+Court+Building",
+                audio: "" // Placeholder for audio
+            },
+            "july_14": {
+                date: "July 14, 2024",
+                title: "Prime Minister's Controversial Remarks",
+                text: `Prime Minister Sheikh Hasina makes highly controversial remarks, comparing the student protesters to "Razakars" (collaborators from the 1971 Liberation War). This statement ignites widespread outrage and significantly escalates tensions.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Angry+Protestors+Reacting",
+                audio: "" // Placeholder for audio, e.g., "sounds/angry_crowd.mp3"
+            },
+            "july_15": {
+                date: "July 15, 2024",
+                title: "Attacks by Chhatra League",
+                text: `Attacks by the Chhatra League (student wing of the ruling party) target student protesters at Dhaka University and Dhaka Medical College Hospital. Videos of innocent students, including women, being beaten with sticks spread like wildfire, fueling public anger. Over 300 are reportedly injured.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Clashes+or+Injured+Students",
+                audio: "" // Placeholder for audio, e.g., "sounds/clash_sounds.mp3"
+            },
+            "witness_account_1": {
+                isModal: true,
+                title: "Witness Account: July 15",
+                text: `A student, fearing for their safety, recounts: "We were protesting peacefully when they charged at us. They had sticks, and they hit anyone they could find. I saw girls being dragged away. It was pure chaos. I ran and hid, but the images... they'll stay with me forever."`,
+                audio: "" // Placeholder for audio, e.g., "sounds/somber_narration.mp3"
+            },
+            "july_16": {
+                date: "July 16, 2024",
+                title: "The First Deaths and Symbolic Martyrdom",
+                text: `Fierce clashes spread across the country, resulting in the first confirmed deaths. Abu Sayed, a student activist in Rangpur, is shot dead by police while participating in the protest. His defiant stance and tragic death make him a powerful symbol of resistance. All universities, colleges, and secondary schools are shut down indefinitely, and students are ordered to vacate dormitories.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Memorial+or+Vigil+for+Victims",
+                audio: "" // Placeholder for audio, e.g., "sounds/mournful_music.mp3"
+            },
+            "july_17": {
+                date: "July 17, 2024",
+                title: "Funerals and Hasina's Address",
+                text: `Students attempt to hold "absentee funerals" for those killed, but police attack these gatherings. Prime Minister Hasina addresses the nation on television, expressing sorrow over the deaths and announcing a judicial inquiry, but students largely reject her conciliatory tone.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Funeral+Procession+or+Vigil",
+                audio: "" // Placeholder for audio
+            },
+            "july_18": {
+                date: "July 18, 2024",
+                title: "The Internet Blackout and Escalating Violence",
+                text: `The violence intensifies significantly across 19 districts, with at least 29 deaths reported. In a drastic move to quell the protests and communication, the government implements a near-total internet shutdown across the entire country starting around 9 PM. Metro rail services are suspended.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Internet+Outage+Symbol",
+                audio: "" // Placeholder for audio, e.g., "sounds/ominous_silence.mp3"
+            },
+            "internet_blackout_simulation": {
+                isSpecialEvent: true,
+                event: "blackout",
+                audio: "", // Blackout event itself can have no audio or a specific sound
+                choices: [{ text: "End Blackout Simulation", next: "july_19" }]
+            },
+            "july_19": {
+                date: "July 19, 2024",
+                title: "Curfew and Army Deployment",
+                text: `Day-long violence results in at least 66 deaths. After midnight, the government imposes a nationwide curfew and deploys the army to help maintain order. More government establishments are vandalized and torched, including Narsingdi jail, where hundreds of inmates are freed.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Army+on+Streets",
+                audio: "" // Placeholder for audio, e.g., "sounds/military_presence.mp3"
+            },
+            "july_20": {
+                date: "July 20, 2024",
+                title: "Curfew Continues, Leaders Detained",
+                text: `Despite the curfew, clashes continue, and at least 21 more people are killed. The government extends the curfew and announces two days of "general holiday." Key organizers of the quota movement and some opposition leaders are detained.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Detentions+or+Empty+Streets",
+                audio: "" // Placeholder for audio
+            },
+            "july_21": {
+                date: "July 21, 2024",
+                title: "Quota Reduced, Demands Grow",
+                text: `The Supreme Court delivers its verdict, curtailing most quotas to 7%. While a concession, protesters largely reject it as "too little, too late" given the mounting death toll. At least seven more people are killed amid the ongoing curfew.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Supreme+Court+Document",
+                audio: "" // Placeholder for audio
+            },
+            "july_22": {
+                date: "July 22, 2024",
+                title: "Rising Death Toll and International Concern",
+                text: `The death toll reaches 146. International bodies like the UN, EU, and UK voice grave concern over the violence and human rights situation. Prime Minister Hasina warns the opposition.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+International+Organizations+Logos",
+                audio: "" // Placeholder for audio
+            },
+            "july_23": {
+                date: "July 23, 2024",
+                title: "Internet Partially Restored",
+                text: `Broadband internet services are gradually restored in selected areas after five days of blackout. The government issues a circular reforming the quota system, but student organizers reject it, demanding more accountability and resignations.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Internet+Cable+or+Network+Icon",
+                audio: "" // Placeholder for audio
+            },
+            "july_25": {
+                date: "July 25, 2024",
+                title: "Continued Crackdown",
+                text: `Arrests and detentions continue across the country. UN, Amnesty International, the US, and Canada call for an end to the crackdown. Prime Minister Hasina makes her first public appearance since the army deployment, visiting a damaged metro rail station.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Damaged+Infrastructure",
+                audio: "" // Placeholder for audio
+            },
+            "july_28": {
+                date: "July 28, 2024",
+                title: "Mobile Internet Returns, Social Media Still Blocked",
+                text: `Mobile internet services are restored, but access to social media platforms remains blocked. Six student organizers, reportedly in Detective Branch custody, read a written statement announcing the end of the movement. However, other sections of the movement quickly disavow this statement, vowing to press on.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Blocked+Social+Media+Icons",
+                audio: "" // Placeholder for audio
+            },
+            "july_31": {
+                date: "July 31, 2024",
+                title: "The 'March for Justice'",
+                text: `Protesters organize a nationwide "March for Justice" in courts, campuses, and streets. They demand accountability for the mass killings, arrests, and human rights violations. The government declares a day of mourning for the victims, a gesture largely rejected by students as insufficient.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Marching+Protestors",
+                audio: "" // Placeholder for audio, e.g., "sounds/march_chants.mp3"
+            },
+            "august_3": {
+                date: "August 3, 2024",
+                title: "The 'July 36' Concept Emerges",
+                text: `As the non-cooperation movement intensifies, student leader Nahid Islam declares, "We haven't gone to August yet. We will go to August only after this July killings are judged." This statement popularizes the concept of "July 36," a symbolic date extending beyond the calendar to emphasize the unaddressed injustices and the continuation of the struggle for justice.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Graffiti+or+Symbolic+Art",
+                audio: "" // Placeholder for audio
+            },
+            "august_4": {
+                date: "August 4, 2024",
+                title: "The Deadliest Day: Mass Casualties",
+                text: `This day becomes one of the deadliest of the movement. Widespread clashes erupt in Dhaka and at least 21 districts, with media reporting scores of deaths. The government reimposes an indefinite curfew across the country, but the popular uprising shows no signs of abating.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Intense+Urban+Clash",
+                audio: "" // Placeholder for audio, e.g., "sounds/chaotic_protest.mp3"
+            },
+            "map_interaction": {
+                isSpecialEvent: true,
+                event: "map",
+                audio: "" // Map interaction can have specific background audio
+            },
+            "august_5": {
+                date: "August 5, 2024 ('July 36')",
+                title: "The Resignation and a New Era",
+                text: `Under immense pressure from the sustained nationwide protests and widespread non-cooperation, Prime Minister Sheikh Hasina resigns and flees the country. Her 15-and-a-half-year rule comes to an end, marking a historic turning point for Bangladesh. An interim government is formed, leading to widespread celebrations mixed with profound remembrance of those who sacrificed their lives. This day is etched in memory as "July 36."`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Celebration+or+New+Government",
+                audio: "" // Placeholder for audio, e.g., "sounds/celebration.mp3"
+            },
+            "epilogue": {
+                date: "After August 5, 2024",
+                title: "The Unfolding Legacy",
+                text: `The July Movement, culminating in the "July 36" moment, reshaped Bangladesh's political landscape. The formation of an interim government marked the beginning of a new, uncertain chapter. We pause here to remember and **pay our deepest respects to all the Shohid (martyrs)** who sacrificed their lives for this cause. Their bravery and ultimate sacrifice will forever be etched in the history of Bangladesh, a testament to the profound cost of freedom and justice. The struggle for accountability for the lives lost, and the pursuit of a truly democratic future continues to be a defining legacy of this historic uprising.`,
+                image: "https://placehold.co/800x400/374151/FFFFFF?text=Placeholder+Image:+Reflection+or+Future+Outlook",
+                audio: "", // Placeholder for audio, e.g., "sounds/reflective_music_tribute.mp3"
+                isSpecialEvent: true,
+                event: "martyr_tribute",
+                choices: [
+                    { text: "View Death Toll Estimates", next: "death_toll_details" },
+                    { text: "Analyze Martyrdom Timeline", next: "temporal_analysis_martyrdoms" }
+                ]
+            },
+            "death_toll_details": {
+                isModal: true,
+                title: "Discrepancies in Death Toll Estimates",
+                text: `
+                    <p class="mb-4">Estimates of the death toll during the July 2024 Bangladesh Movement vary significantly across different sources, reflecting the chaos, restrictions, and challenges in verification during and after the events.</p>
+                    <div class="overflow-x-auto rounded-lg shadow-md">
+                        <table class="data-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Death Toll</th>
+                                    <th>Date Reported</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Shohid24 Dataset</td>
+                                    <td>456</td>
+                                    <td>April 2025</td>
+                                    <td>Detailed list, likely undercount due to verification challenges</td>
+                                </tr>
+                                <tr>
+                                    <td>Initial Official Reports</td>
+                                    <td>215</td>
+                                    <td>Early Aug 2024</td>
+                                    <td>Likely underestimated due to restrictions (AP News)</td>
+                                </tr>
+                                <tr>
+                                    <td>UN OHCHR Preliminary Report</td>
+                                    <td>650+</td>
+                                    <td>Aug 16, 2024</td>
+                                    <td>Noted communication restrictions ([Preliminary Analysis of Recent Protests and Unrest in Bangladesh])</td>
+                                </tr>
+                                <tr>
+                                    <td>Ministry of Health and Family Welfare</td>
+                                    <td>1,000+</td>
+                                    <td>Aug 29, 2024</td>
+                                    <td>Bloodiest period since 1971 (Reuters)</td>
+                                </tr>
+                                <tr>
+                                    <td>UN OHCHR Fact-Finding Report</td>
+                                    <td>1,400+</td>
+                                    <td>Feb 12, 2025</td>
+                                    <td>Comprehensive estimate ([Bangladesh protests probe reveals top leaders led brutal repression])</td>
+                                </tr>
+                                <tr>
+                                    <td>Students Against Discrimination</td>
+                                    <td>1,581</td>
+                                    <td>Sep 28, 2024</td>
+                                    <td>Highest estimate (BSS News)</td>
+                                </tr>
+                                <tr>
+                                    <td>Interim Government Gazette</td>
+                                    <td>834</td>
+                                    <td>Jan 16, 2025</td>
+                                    <td>Official list (First gazette on ‘martyrs’ of July uprising published)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `,
+                choices: [{ text: "Return to Epilogue", next: "epilogue" }],
+                audio: "" // Placeholder for modal audio
+            },
+            "temporal_analysis_martyrdoms": {
+                isModal: true,
+                title: "Temporal Analysis of Martyrdoms (Shohid24 Dataset)",
+                text: `
+                    <p class="mb-4">The Shohid24 dataset records martyrdoms primarily between July 16 and August 18, 2024, with a single outlier on December 23, 2024. This table summarizes the daily and cumulative counts, highlighting the progression of casualties over time.</p>
+                    <div class="overflow-x-auto rounded-lg shadow-md">
+                        <table class="data-table text-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Daily Count</th>
+                                    <th>Cumulative Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>2024-07-16</td><td>4</td><td>4</td></tr>
+                                <tr><td>2024-07-17</td><td>1</td><td>5</td></tr>
+                                <tr><td>2024-07-18</td><td>52</td><td>57</td></tr>
+                                <tr><td>2024-07-19</td><td>102</td><td>159</td></tr>
+                                <tr><td>2024-07-20</td><td>40</td><td>199</td></tr>
+                                <tr><td>2024-07-21</td><td>28</td><td>227</td></tr>
+                                <tr><td>2024-07-22</td><td>4</td><td>231</td></tr>
+                                <tr><td>2024-07-23</td><td>5</td><td>236</td></tr>
+                                <tr><td>2024-07-24</td><td>4</td><td>240</td></tr>
+                                <tr><td>2024-07-25</td><td>5</td><td>245</td></tr>
+                                <tr><td>2024-07-26</td><td>4</td><td>249</td></tr>
+                                <tr><td>2024-07-27</td><td>2</td><td>251</td></tr>
+                                <tr><td>2024-07-29</td><td>2</td><td>253</td></tr>
+                                <tr><td>2024-07-30</td><td>1</td><td>254</td></tr>
+                                <tr><td>2024-07-31</td><td>1</td><td>255</td></tr>
+                                <tr><td>2024-08-02</td><td>1</td><td>256</td></tr>
+                                <tr><td>2024-08-04</td><td>60</td><td>316</td></tr>
+                                <tr><td>2024-08-05</td><td>104</td><td>420</td></tr>
+                                <tr><td>2024-08-06</td><td>9</td><td>429</td></tr>
+                                <tr><td>2024-08-07</td><td>7</td><td>436</td></tr>
+                                <tr><td>2024-08-08</td><td>6</td><td>442</td></tr>
+                                <tr><td>2024-08-09</td><td>6</td><td>448</td></tr>
+                                <tr><td>2024-08-10</td><td>2</td><td>450</td></tr>
+                                <tr><td>2024-08-11</td><td>2</td><td>452</td></tr>
+                                <tr><td>2024-08-14</td><td>1</td><td>453</td></tr>
+                                <tr><td>2024-08-15</td><td>1</td><td>454</td></tr>
+                                <tr><td>2024-08-18</td><td>1</td><td>455</td></tr>
+                                <tr><td>2024-12-23</td><td>1</td><td>456</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `,
+                choices: [{ text: "Return to Epilogue", next: "epilogue" }],
+                audio: "" // Placeholder for modal audio
+            }
+        };
+
+        // State variables
+        let currentSceneId = "prologue";
+        let history = []; // Stack to store visited scene IDs for 'back' functionality
+        let currentAudio = null; // To manage playing audio
+        let globalVolume = 0.5; // Initial global volume
+
+        // Touch swipe variables
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const swipeThreshold = 50; // Minimum horizontal distance for a swipe
+
+        // DOM Elements
+        const appContainer = document.getElementById("app"); // Get the main app container for swipe
+        const dateDisplay = document.getElementById("date-display");
+        const storyImage = document.getElementById("story-image");
+        const imagePlaceholder = document.getElementById("image-placeholder");
+        const narrativeText = document.getElementById("narrative-text");
+        const choicesContainer = document.getElementById("choices-container");
+        const backButton = document.getElementById("back-button");
+        const nextDayButton = document.getElementById("next-day-button");
+        const volumeControl = document.getElementById("volume-control");
+        const modalOverlay = document.getElementById("modal-overlay");
+        const modalTitle = document.getElementById("modal-title");
+        const modalText = document.getElementById("modal-text");
+        const modalChoices = document.getElementById("modal-choices");
+        const closeModalButton = document.getElementById("close-modal");
+        const blackoutOverlay = document.getElementById("blackout-overlay");
+        const endBlackoutButton = document.getElementById("end-blackout");
+        const learnMoreSection = document.getElementById("learn-more-section");
+        const mapInteractionContainer = document.getElementById("map-interaction-container");
+        const interactiveMap = document.getElementById("interactive-map");
+        const mapInfoDisplay = document.getElementById("map-info-display");
+        const martyrTributeOverlay = document.getElementById("martyr-tribute-overlay");
+        const progressBar = document.getElementById('progress-bar');
+
+        // Define the order of main story scenes for progress bar calculation
+        const mainStoryScenes = [
+            "prologue", "july_1", "july_7", "july_10", "july_14", "july_15",
+            "july_16", "july_17", "july_18", "july_19", "july_20", "july_21",
+            "july_22", "july_23", "july_25", "july_28", "july_31", "august_3",
+            "august_4", "august_5", "epilogue"
+        ];
+
+        // Map data (example points for illustration)
+        const mapPointsData = [
+            { id: "dhaka", x: "48%", y: "40%", name: "Dhaka", info: "Intense clashes, many casualties, epicenter of protests. Government buildings targeted." },
+            { id: "chittagong", x: "70%", y: "70%", name: "Chittagong", info: "Significant protests and violence, leading to deaths and injuries." },
+            { id: "rangpur", x: "25%", y: "20%", name: "Rangpur", info: "Location where Abu Sayed was killed on July 16, sparking further outrage." },
+            { id: "rajshahi", x: "20%", y: "45%", name: "Rajshahi", info: "Student-police confrontations, university halls taken by students." },
+            { id: "narsingdi", x: "55%", y: "35%", name: "Narsingdi", info: "Jail stormed and inmates freed on July 19 amidst nationwide unrest." }
+        ];
+
+        /**
+         * Plays an audio file.
+         * @param {string} src - The URL of the audio file.
+         */
+        function playAudio(src) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if (src) {
+                currentAudio = new Audio(src);
+                currentAudio.volume = globalVolume; // Set volume from global control
+                currentAudio.loop = true; // Loop background audio
+                currentAudio.play().catch(e => console.error("Error playing audio:", e));
+            }
+        }
+
+        /**
+         * Stops any currently playing audio.
+         */
+        function stopAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+        }
+
+        /**
+         * Updates the progress bar based on the current scene.
+         */
+        function updateProgressBar() {
+            const currentIndex = mainStoryScenes.indexOf(currentSceneId);
+            if (currentIndex !== -1) {
+                const progress = (currentIndex / (mainStoryScenes.length - 1)) * 100;
+                progressBar.style.width = `${progress}%`;
+            } else {
+                progressBar.style.width = '0%'; // Reset if not a main story scene
+            }
+        }
+
+        /**
+         * Displays a specific scene from the data.
+         * @param {string} sceneId - The ID of the scene to display.
+         * @param {boolean} fromHistory - True if navigating back, to prevent adding to history again.
+         */
+        function displayScene(sceneId, fromHistory = false) {
+            stopAudio(); // Stop any previous audio
+            const scene = storyData[sceneId];
+
+            if (!scene) {
+                console.error("Scene not found:", sceneId);
+                return;
+            }
+
+            if (!fromHistory && currentSceneId !== sceneId) {
+                history.push(currentSceneId); // Add current scene to history before changing
+            }
+            currentSceneId = sceneId;
+
+            // Update progress bar
+            updateProgressBar();
+
+            // Reset special event containers and tribute overlay
+            mapInteractionContainer.classList.add("hidden");
+            learnMoreSection.classList.add("hidden");
+            martyrTributeOverlay.classList.remove('active'); // Ensure it's hidden by default
+
+            // Handle special events
+            if (scene.isSpecialEvent) {
+                if (scene.event === "blackout") {
+                    activateBlackout();
+                    return; // Don't render normal scene content, blackout takes over
+                }
+                if (scene.event === "map") {
+                    mapInteractionContainer.classList.remove("hidden");
+                    renderMapPoints();
+                    // Still render the main text for context
+                }
+                if (scene.event === "martyr_tribute") {
+                    // Trigger the tribute animation
+                    martyrTributeOverlay.classList.add('active'); // Fade in to somber red with text
+                    setTimeout(() => {
+                        martyrTributeOverlay.classList.remove('active'); // Fade out after a moment
+                    }, 4000); // Display for 4 seconds (longer for text to be read)
+                }
+            }
+
+            // Update DOM with scene content
+            dateDisplay.textContent = scene.date;
+            narrativeText.innerHTML = `<p class="fade-in">${scene.text}</p>`; // Use innerHTML to allow HTML tables/etc.
+
+            // Image handling
+            storyImage.classList.remove('opacity-100');
+            storyImage.classList.add('opacity-0');
+            if (scene.image) {
+                storyImage.src = scene.image;
+                storyImage.alt = scene.title + " image";
+                imagePlaceholder.classList.add('hidden');
+                // Use a small timeout to ensure the image source is updated before fading in
+                setTimeout(() => storyImage.classList.add('opacity-100'), 50);
+            } else {
+                storyImage.src = "";
+                imagePlaceholder.classList.remove('hidden');
+            }
+
+            // Choices
+            choicesContainer.innerHTML = ''; // Clear previous choices
+            if (scene.choices && scene.choices.length > 0) {
+                scene.choices.forEach(choice => {
+                    const button = document.createElement("button");
+                    button.textContent = choice.text;
+                    button.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 w-full sm:w-auto";
+                    button.onclick = () => handleChoice(choice.next);
+                    choicesContainer.appendChild(button);
+                });
+                nextDayButton.classList.add('hidden'); // Hide auto next day button if choices exist
+            } else {
+                // If no choices, check if it's the end of the linear story
+                const nextLinearSceneId = getNextLinearScene(sceneId);
+                if (nextLinearSceneId) {
+                     nextDayButton.classList.remove('hidden');
+                     nextDayButton.onclick = () => handleChoice(nextLinearSceneId);
+                } else {
+                    nextDayButton.classList.add('hidden'); // Hide if truly the end
+                    if (sceneId === "epilogue" && !learnMoreSection.classList.contains('hidden')) {
+                        // If epilogue and no choices, it's the very end of the main narrative, but death toll might still be browsable.
+                    } else if (sceneId === "epilogue") {
+                        learnMoreSection.classList.remove('hidden'); // Show learn more section at the end
+                    }
+                }
+            }
+
+
+            // Modal handling
+            if (scene.isModal) {
+                modalTitle.textContent = scene.title;
+                modalText.innerHTML = scene.text; // Use innerHTML for modal text as it might contain tables
+                modalChoices.innerHTML = '';
+                if (scene.choices) {
+                    scene.choices.forEach(choice => {
+                        const button = document.createElement("button");
+                        button.textContent = choice.text;
+                        button.className = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50";
+                        button.onclick = () => {
+                            modalOverlay.classList.remove("open");
+                            handleChoice(choice.next);
+                        };
+                        modalChoices.appendChild(button);
+                    });
+                }
+                modalOverlay.classList.add("open");
+            } else {
+                modalOverlay.classList.remove("open");
+            }
+
+            // Update back button visibility
+            if (history.length > 0) {
+                backButton.classList.remove('hidden');
+            } else {
+                backButton.classList.add('hidden');
+            }
+
+            // Play scene audio
+            if (scene.audio) {
+                playAudio(scene.audio);
+            }
+        }
+
+        /**
+         * Handles a user's choice, moving to the next scene.
+         * @param {string} nextSceneId - The ID of the next scene.
+         */
+        function handleChoice(nextSceneId) {
+            displayScene(nextSceneId);
+        }
+
+        /**
+         * Goes back to the previous scene in history.
+         */
+        function goBack() {
+            if (history.length > 0) {
+                const prevSceneId = history.pop();
+                displayScene(prevSceneId, true); // True to indicate going back, so it's not added to history again
+            }
+        }
+
+        /**
+         * Gets the next scene ID in a linear progression, if no explicit choices are given.
+         * This assumes a natural chronological order in the `storyData` object.
+         * @param {string} currentId - The current scene ID.
+         * @returns {string|null} The next scene ID or null if none.
+         */
+        function getNextLinearScene(currentId) {
+            const sceneKeys = Object.keys(storyData);
+            const currentIndex = sceneKeys.indexOf(currentId);
+            if (currentIndex !== -1 && currentIndex < sceneKeys.length - 1) {
+                // Skip modal scenes in linear progression unless explicitly chosen
+                let nextKey = sceneKeys[currentIndex + 1];
+                while(storyData[nextKey] && storyData[nextKey].isModal) {
+                    nextKey = sceneKeys[sceneKeys.indexOf(nextKey) + 1];
+                }
+                return nextKey || null;
+            }
+            return null;
+        }
+
+        /**
+         * Activates the internet blackout simulation.
+         */
+        function activateBlackout() {
+            blackoutOverlay.classList.remove("hidden");
+            // Hide main content temporarily
+            document.getElementById("app").classList.add("hidden");
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            stopAudio(); // Stop any background audio
+        }
+
+        /**
+         * Deactivates the internet blackout simulation.
+         */
+        function deactivateBlackout() {
+            blackoutOverlay.classList.add("hidden");
+            document.getElementById("app").classList.remove("hidden");
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            // After blackout, continue to the scene that was next
+            // Ensure there are choices defined for the current scene before trying to access them
+            if (storyData[currentSceneId] && storyData[currentSceneId].choices && storyData[currentSceneId].choices.length > 0) {
+                const nextSceneIdAfterBlackout = storyData[currentSceneId].choices[0].next;
+                displayScene(nextSceneIdAfterBlackout);
+            } else {
+                console.error("No valid next scene defined after blackout for scene:", currentSceneId);
+                // Fallback: go to epilogue or a generic error scene if no specific next scene
+                displayScene("epilogue");
+            }
+        }
+
+        /**
+         * Renders clickable map points for regional impact.
+         */
+        function renderMapPoints() {
+            interactiveMap.innerHTML = ''; // Clear previous points
+            mapInfoDisplay.innerHTML = '<p class="text-gray-400">Select a point on the map to learn more about events in that region.</p>';
+
+            mapPointsData.forEach(point => {
+                const div = document.createElement("div");
+                div.className = "map-point";
+                div.style.left = point.x;
+                div.style.top = point.y;
+                div.dataset.id = point.id;
+                div.onclick = () => showMapPointInfo(point);
+
+                const label = document.createElement("span");
+                label.className = "map-point-label";
+                label.textContent = point.name;
+                div.appendChild(label);
+
+                interactiveMap.appendChild(div);
+            });
+        }
+
+        /**
+         * Displays information for a selected map point.
+         * @param {object} point - The map point data.
+         */
+        function showMapPointInfo(point) {
+            mapInfoDisplay.innerHTML = `
+                <h4 class="text-lg font-semibold text-red-200 mb-2">${point.name}</h4>
+                <p class="text-gray-300">${point.info}</p>
+            `;
+        }
+
+        // --- Touch Swipe Handlers ---
+        function handleTouchStart(event) {
+            touchStartX = event.touches[0].clientX;
+            // Prevent scrolling only if a horizontal swipe is intended
+            // event.preventDefault(); // Moved to touchmove for better UX
+        }
+
+        function handleTouchMove(event) {
+            // Prevent default scroll behavior if a horizontal swipe is being detected
+            if (Math.abs(event.touches[0].clientX - touchStartX) > Math.abs(event.touches[0].clientY - touchStartX)) {
+                event.preventDefault();
+            }
+        }
+
+        function handleTouchEnd(event) {
+            touchEndX = event.changedTouches[0].clientX;
+            const diffX = touchEndX - touchStartX;
+
+            // Only trigger swipe if not a modal is open or blackout active
+            if (modalOverlay.classList.contains('open') || blackoutOverlay.classList.contains('active')) {
+                return;
+            }
+
+            if (diffX > swipeThreshold) {
+                // Swiped right (go back)
+                goBack();
+            } else if (diffX < -swipeThreshold) {
+                // Swiped left (go next)
+                const nextLinearSceneId = getNextLinearScene(currentSceneId);
+                if (nextLinearSceneId) {
+                    handleChoice(nextLinearSceneId);
+                }
+            }
+        }
+        // --- End Touch Swipe Handlers ---
+
+
+        // Event Listeners
+        backButton.addEventListener("click", goBack);
+        closeModalButton.addEventListener("click", () => modalOverlay.classList.remove("open"));
+        endBlackoutButton.addEventListener("click", deactivateBlackout);
+
+        // Volume control listener
+        volumeControl.addEventListener("input", (event) => {
+            globalVolume = parseFloat(event.target.value);
+            if (currentAudio) {
+                currentAudio.volume = globalVolume;
+            }
+        });
+
+        // Add touch event listeners to the main app container
+        appContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+        appContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+        appContainer.addEventListener('touchend', handleTouchEnd);
+
+
+        // Initialize the story
+        document.addEventListener("DOMContentLoaded", () => {
+            volumeControl.value = globalVolume; // Set initial slider position
+            displayScene("prologue");
+        });
+
+    </script>
+</body>
 </html>
